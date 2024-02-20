@@ -68,7 +68,7 @@ class Claimer:
             claim_call = contract.functions['claim'].prepare({"identity":self.account.address,
                                                         "balance": format_amount(amount),
                                                         "index": index,
-                                                        "merkle_path": [int(i, 16) for i in proof] })
+                                                        "merkle_path": [int(i, 16) for i in proof]})
             contract_strk = await get_contract(starknet_tokens_addresses['stark'], starknet_token_abi, self.account.client)
             call = contract_strk.functions['transfer'].prepare(int(self.address_to, 16), format_amount(amount))
             tx = await self.account.execute([claim_call, call], auto_estimate=True)
@@ -91,7 +91,7 @@ class Claimer:
                 continue
             try:
                 contract = await get_contract(starknet_tokens_addresses['stark'], starknet_token_abi, self.account.client)
-                call = contract.functions['transfer'].prepare(int(address_to, 16), format_amount(amount))
+                call = contract.functions['transfer'].prepare(int(address_to, 16), amount)
                 tx = await self.account.execute([call], auto_estimate=True)
                 status = await self.account.client.wait_for_tx(tx.transaction_hash)
                 tx_url = f'https://starkscan.co/tx/{hex(tx.transaction_hash)}'
