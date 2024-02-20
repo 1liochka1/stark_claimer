@@ -21,7 +21,7 @@ class Starknet_account:
         self.proxy_ = proxy if proxy else None
         self.session = get_session(proxy) if proxy else None
         self.client = self.setup_client()
-        self.address = ''
+        self._address = ''
         self._address_to = address_to
         self.key = key
         self.id = id
@@ -37,6 +37,10 @@ class Starknet_account:
         return self.proxy_
 
     @property
+    def address(self):
+        return self._address
+
+    @property
     def address_to(self):
         return self._address_to
 
@@ -46,14 +50,15 @@ class Starknet_account:
 
     def setup_client(self):
         return FullNodeClient(rpcs['stark'], session=self.session)
+
     async def get_account(self):
-        self.address, self.wallet_type = await get_wallet_address(self.key, self.client)
-        address = self.address[2:]
+        self._address, self.wallet_type = await get_wallet_address(self.key, self.client)
+        address = self._address[2:]
         while len(str(address)) < 64:
             address = "0" + address
-        self.address = '0x' + address
+        self._address = '0x' + address
         return Account(
-            address=self.address,
+            address=self._address,
             client=self.client,
             key_pair=await get_keypair(self.key),
             chain=StarknetChainId.MAINNET
