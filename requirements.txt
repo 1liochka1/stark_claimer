@@ -1,0 +1,10 @@
+aiohttp~=3.9.3
+loguru~=0.7.2
+bip32~=3.4
+bip39~=0.0.2
+hdwallet~=2.2.1
+questionary~=2.0.1
+aiohttp-socks==0.8.3
+starknet-py==0.18.3
+loguru
+web3==6.15.1
