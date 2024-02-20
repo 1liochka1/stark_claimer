@@ -8,3 +8,5 @@ aiohttp-socks==0.8.3
 starknet-py==0.18.3
 loguru
 web3==6.15.1
+2captcha-python==1.2.2
+anticaptchaofficial
