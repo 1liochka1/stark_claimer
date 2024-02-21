@@ -1,8 +1,4 @@
-
-rpcs = {
-    'stark': '',
-}
+rpc = ''
 
 # 'argent', 'braavos'
 wallet_type = 'argent'
-

@@ -13,7 +13,7 @@ from starknet_py.hash.address import compute_address
 from starknet_py.net.client_errors import ClientError
 from starknet_py.net.full_node_client import FullNodeClient
 
-from config import wallet_type, rpcs
+from config import wallet_type, rpc
 from info.starknet_info import (ARGENT_CLASS_HASH, ARGENT_OLD_CLASH_HASH, ARGENT_PROXY_CLASS_HASH)
 from info.starknet_info import (BRAAVOS_CLASS_HASH, BRAAVOS_PROXY_CLASS_HASH)
 from info.starknet_info import base_path
@@ -120,7 +120,7 @@ async def check_class_hash(address, client):
         return False
 
 
-async def check_and_get_argent_address(key, client=FullNodeClient(rpcs['stark'])):
+async def check_and_get_argent_address(key, client=FullNodeClient(rpc)):
     try:
         address = await get_argent_address(key)
         class_hash = await check_class_hash(address, client)
@@ -160,7 +160,7 @@ async def check_and_get_argent_address(key, client=FullNodeClient(rpcs['stark'])
         return False
 
 
-async def get_wallet_address(key, client=FullNodeClient(rpcs['stark'])):
+async def get_wallet_address(key, client=FullNodeClient(rpc)):
     try:
         address = await get_argent_address(key)
         class_hash = await check_class_hash(address, client)
@@ -219,7 +219,7 @@ async def get_wallet_address(key, client=FullNodeClient(rpcs['stark'])):
         logger.error(e)
         return False
 
-async def _get_wallet_address(key, client=FullNodeClient(rpcs['stark'])):
+async def _get_wallet_address(key, client=FullNodeClient(rpc)):
     address = await get_wallet_address(key, client)
     if not address:
         return

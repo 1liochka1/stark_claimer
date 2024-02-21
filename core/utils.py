@@ -5,11 +5,13 @@ from aiohttp.client_exceptions import ClientConnectorError
 from loguru import logger
 from python_socks._errors import ProxyError, ProxyTimeoutError, ProxyConnectionError
 from starknet_py.contract import Contract
-from starknet_py.net.account.account import Account
+from starknet_py.net.account.account import Account, _parse_calls_v2, _execute_payload_serializer_v2, \
+    _execute_payload_serializer, _merge_calls
 from starknet_py.net.full_node_client import FullNodeClient
-from starknet_py.net.models import StarknetChainId
+from starknet_py.net.models import StarknetChainId, Invoke
+from starknet_py.utils.iterable import ensure_iterable
 
-from config import rpcs
+from config import rpc
 from core.other_utils import get_session
 from info.tokens import (starknet_tokens_addresses)
 from wallet.wallet_utils import get_wallet_address
@@ -26,7 +28,6 @@ class Starknet_account:
         self.key = key
         self.id = id
         self.wallet_type = ''
-
 
     @property
     def acc_info(self):
@@ -49,7 +50,7 @@ class Starknet_account:
             await self.session.close()
 
     def setup_client(self):
-        return FullNodeClient(rpcs['stark'], session=self.session)
+        return FullNodeClient(rpc, session=self.session)
 
     async def get_account(self):
         self._address, self.wallet_type = await get_wallet_address(self.key, self.client)
@@ -64,6 +65,32 @@ class Starknet_account:
             chain=StarknetChainId.MAINNET
         )
 
+
+async def get_fee(calls, account: Account):
+    try:
+        if await account.cairo_version == 1:
+            parsed_calls = _parse_calls_v2(ensure_iterable(calls))
+            wrapped_calldata = _execute_payload_serializer_v2.serialize(
+                {"calls": parsed_calls}
+            )
+        else:
+            call_descriptions, calldata = _merge_calls(ensure_iterable(calls))
+            wrapped_calldata = _execute_payload_serializer.serialize(
+                {"call_array": call_descriptions, "calldata": calldata}
+            )
+
+        max_fee = await account._get_max_fee(Invoke(
+            calldata=wrapped_calldata,
+            signature=[],
+            max_fee=0,
+            version=1,
+            nonce=await account.get_nonce(),
+            sender_address=account.address,
+        ), auto_estimate=True)
+        return max_fee
+    except Exception as e:
+        logger.error(f'{hex(account.address)} - {e}')
+        return
 
 def tx_exceptor(info, address=None):
     def decorator(func):
@@ -124,5 +151,3 @@ async def get_balance(account: Account, token=None, token_address=None):
 
 async def get_contract(address, abi, client, version=0) -> Contract:
     return Contract(address, abi, client, cairo_version=version)
-
-

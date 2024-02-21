@@ -1,9 +1,9 @@
 import asyncio
 import json
 import os
+import sys
 
 import questionary
-import requests
 from loguru import logger
 from questionary import Choice
 
@@ -27,7 +27,6 @@ async def get_proofs(batches):
             data = json.load(file)
             data = data["eligibles"]
             for addr in addresses:
-                # Проверка наличия элементов в файле
                 for addr_ in data:
                     if addr_["identity"] == addr:
                         addresses_proofs[addr] = addr_
@@ -41,6 +40,7 @@ async def main(module):
     batches = get_batches()
     await get_proofs(batches)
     tasks = []
+
     for i in batches:
         id, key, address_to,  proxy = i.split(';')
         tasks.append(start(id, key, proxy=proxy, address_to=address_to, task=module))
@@ -56,11 +56,15 @@ if __name__ == '__main__':
             "Выберите модули для работы...",
             choices=[
                 Choice(" 1) КЛЕЙМ", 'claim'),
-                Choice(" 2) ТРАНСФЕР", 'tr'),
+                Choice(" 2) ТРАНСФЕР ВСЕГО STRK", 'strk'),
+                Choice(" 3) ТРАНСФЕР ВСЕГО ETH", 'eth'),
+                Choice(" 4) ВЫХОД", 'e'),
             ],
             qmark="",
             pointer="⟹",
         ).ask()
+        if m == 'e':
+            sys.exit()
         loop.run_until_complete(main(m))
     except KeyboardInterrupt:
         logger.debug('Мануально завершаю работу')
