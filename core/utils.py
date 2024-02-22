@@ -31,7 +31,7 @@ class Starknet_account:
 
     @property
     def acc_info(self):
-        return f'{self.id}:{self.address}:{self.wallet_type}'
+        return f'{self.id}) {self.address}:{self.wallet_type}'
 
     @property
     def proxy(self):

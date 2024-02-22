@@ -1,7 +1,6 @@
 import asyncio
 import json
 import json as js
-import sys
 
 import aiohttp
 from loguru import logger
@@ -21,21 +20,6 @@ def check_status_tx(status, tx_url):
         logger.error(f'Ошибка транзакции {tx_url} ...')
         return False
 
-
-
-async def send_request(url, method, *, params=None, json=None, headers=None, proxy=None):
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.request(method, url, headers=headers, params=params, json=json,
-                                       proxy=proxy) as response:
-                if response.status == 200:
-                    return js.loads(await response.text())
-                await asyncio.sleep(1)
-                logger.error(f'Ошибка при отправке запроса {url}: {await response.text()}...')
-                return
-    except Exception as e:
-        logger.error(f'Ошибка - {e}...')
-        return
 
 
 class Claimer:
@@ -70,8 +54,10 @@ class Claimer:
                                                         "index": index,
                                                         "merkle_path": [int(i, 16) for i in proof]})]
             if self.address_to:
-                logger.warning(f'{self.info} - не был указан адрес для отправки, делаю только клейм!...')
                 calls.append(await self.create_transfer_call('stark', format_amount(amount)))
+            else:
+                logger.warning(f'{self.info} - не был указан адрес для отправки, делаю только клейм!...')
+
             tx = await self.account.execute(calls, auto_estimate=True)
             status = await self.account.client.wait_for_tx(tx.transaction_hash)
             tx_url = f'https://starkscan.co/tx/{hex(tx.transaction_hash)}'
@@ -106,7 +92,7 @@ class Claimer:
                 logger.success(f'{self.info} - успешно отправил {amount/10**18} ETH - {tx_url}')
                 return True
         except Exception as e:
-            logger.error(e)
+            logger.error(f'{self.info} - {e}')
 
 
     async def transfer_strk(self):

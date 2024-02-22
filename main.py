@@ -39,13 +39,15 @@ async def get_proofs(batches):
 async def main(module):
     batches = get_batches()
     await get_proofs(batches)
-    tasks = []
 
-    for i in batches:
-        id, key, address_to,  proxy = i.split(';')
-        tasks.append(start(id, key, proxy=proxy, address_to=address_to, task=module))
+    for batch in [batches[i:i + 50] for i in
+                  range(0, len(batches), 50)]:
+        tasks = []
+        for i in batch:
+            id, key, address_to, proxy = i.split(';')
+            tasks.append(start(id, key, proxy=proxy, address_to=address_to, task=module))
 
-    await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks)
 
 
 if __name__ == '__main__':
