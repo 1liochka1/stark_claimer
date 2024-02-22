@@ -144,8 +144,11 @@ def get_data_wallets(key):
         return
 
 
-async def check_key(key):
+async def check_key(key: str):
     if get_data_wallets(key) == 'seeds':
         return await get_wallet_private_key(key)
     else:
-        return key
+        if key.startswith('0x'):
+            return key
+        else:
+            return hex(int(key))

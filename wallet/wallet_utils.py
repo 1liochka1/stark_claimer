@@ -14,7 +14,8 @@ from starknet_py.net.client_errors import ClientError
 from starknet_py.net.full_node_client import FullNodeClient
 
 from config import wallet_type, rpc
-from info.starknet_info import (ARGENT_CLASS_HASH, ARGENT_OLD_CLASH_HASH, ARGENT_PROXY_CLASS_HASH)
+from info.starknet_info import (ARGENT_CLASS_HASH, ARGENT_OLD_CLASH_HASH, ARGENT_PROXY_CLASS_HASH,
+                                ARGENT_OLD_NOV_22_CLASS_HASH, ARGENT_OLD_NOV_22_PROXY_CLASS_HASH)
 from info.starknet_info import (BRAAVOS_CLASS_HASH, BRAAVOS_PROXY_CLASS_HASH)
 from info.starknet_info import base_path
 from wallet.starknet_utils import (create_constructor_call_data, get_starknet_keypair_public_key)
@@ -103,6 +104,8 @@ async def get_argent_address(key):
 async def get_old_argent_address(key):
     return await get_address(key, ARGENT_OLD_CLASH_HASH, ARGENT_PROXY_CLASS_HASH)
 
+async def get_old_22_nov_argent_address(key):
+    return await get_address(key, ARGENT_OLD_NOV_22_CLASS_HASH, ARGENT_OLD_NOV_22_PROXY_CLASS_HASH)
 
 async def get_private_braavos(seed):
     return await get_private_braavos_(seed)
@@ -164,6 +167,7 @@ async def get_wallet_address(key, client=FullNodeClient(rpc)):
     try:
         address = await get_argent_address(key)
         class_hash = await check_class_hash(address, client)
+
         if class_hash:
             return address, 'argent'
     except ClientError as e:
@@ -192,14 +196,26 @@ async def get_wallet_address(key, client=FullNodeClient(rpc)):
                     else:
                         return False
                 except ClientError as e:
-                    if 'is not deployed' in str(e) or 'Contract not found' in str(e):
-                        logger.error(
-                            f'{key[:6]}...{key[60:]} - Не нашел версию для данного ключа, возможно он не был задеплоен...')
-                        return False
-                    elif "Couldn't connect to proxy" in str(e):
-                        return await get_wallet_address(key, client)
-                    else:
-                        return await get_wallet_address(key, client)
+                    try:
+                        address = await get_old_22_nov_argent_address(key)
+                        class_hash = await check_class_hash(address, client)
+                        if class_hash:
+                            return address, 'argent'
+                    except ClientConnectorError as e:
+                        logger.error(e)
+                        if ClientConnectorError.ssl == 'default':
+                            return await get_wallet_address(key, client)
+                        else:
+                            return False
+                    except ClientError as e:
+                        if 'is not deployed' in str(e) or 'Contract not found' in str(e):
+                            logger.error(
+                                f'{key[:6]}...{key[60:]} - Не нашел версию для данного ключа, возможно он не был задеплоен...')
+                            return False
+                        elif "Couldn't connect to proxy" in str(e):
+                            return await get_wallet_address(key, client)
+                        else:
+                            return await get_wallet_address(key, client)
         else:
             logger.error(e)
             return await get_wallet_address(key, client)

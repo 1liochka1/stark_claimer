@@ -1,10 +1,9 @@
 import asyncio
 import json
-import json as js
 
-import aiohttp
 from loguru import logger
 from starknet_py.net.account.account import Account
+
 from abi.abi import starknet_token_abi, claim_abi
 from core.other_utils import format_amount
 from core.utils import Starknet_account, get_contract, get_fee
@@ -39,7 +38,8 @@ class Claimer:
         self.address_to = account.address_to
         return self
 
-    async def get_proof(self, address):
+    @staticmethod
+    async def get_proof(address):
         with open('addresses_proofs.json', 'r') as f:
             data = json.load(f)
 
