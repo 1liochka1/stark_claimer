@@ -13,6 +13,8 @@ async def start(id, key, proxy=None, address_to=None, task=''):
     proxy = await setup_proxy(proxy)
     starknet_account = Starknet_account(key, id, address_to, proxy)
     claimer = await Claimer.create(starknet_account)
+    if not claimer:
+        return
     if task == 'claim':
         proof = await claimer.get_proof(starknet_account.address)
         if not proof:

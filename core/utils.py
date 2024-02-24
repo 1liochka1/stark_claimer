@@ -53,7 +53,10 @@ class Starknet_account:
         return FullNodeClient(rpc, session=self.session)
 
     async def get_account(self):
-        self._address, self.wallet_type = await get_wallet_address(self.key, self.client)
+        data = await get_wallet_address(self.key, self.client)
+        if not data:
+            return
+        self._address, self.wallet_type = data
         address = self._address[2:]
         while len(str(address)) < 64:
             address = "0" + address

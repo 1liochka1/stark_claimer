@@ -32,6 +32,8 @@ class Claimer:
     async def create(cls, account: Starknet_account):
         self = Claimer()
         self.account = await account.get_account()
+        if not self.account:
+            return
         self.account.ESTIMATED_FEE_MULTIPLIER = 1
         self.proxy = account.proxy
         self.info = account.acc_info

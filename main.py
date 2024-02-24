@@ -18,7 +18,8 @@ async def get_proofs(batches):
         _, key, _, _ = addr.split(";")
         key = await check_key(key)
         starknet_account = Starknet_account(key, 0)
-        await starknet_account.get_account()
+        if not await starknet_account.get_account():
+            continue
         addresses.append(starknet_account.address)
     file_list = os.listdir('eligible')
     for file_name in file_list:
