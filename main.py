@@ -7,6 +7,7 @@ import questionary
 from loguru import logger
 from questionary import Choice
 
+from config import amount_batches
 from core.other_utils import get_batches, check_key
 from core.runner import start
 from core.utils import Starknet_account
@@ -41,8 +42,8 @@ async def main(module):
     batches = get_batches()
     await get_proofs(batches)
 
-    for batch in [batches[i:i + 50] for i in
-                  range(0, len(batches), 50)]:
+    for batch in [batches[i:i + amount_batches] for i in
+                  range(0, len(batches), amount_batches)]:
         tasks = []
         for i in batch:
             id, key, address_to, proxy = i.split(';')

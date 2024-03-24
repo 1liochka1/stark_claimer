@@ -254,3 +254,4 @@ async def get_wallet_private_key(seed):
     else:
         return await get_private_argent(seed)
 
+

@@ -15,18 +15,19 @@ async def start(id, key, proxy=None, address_to=None, task=''):
     claimer = await Claimer.create(starknet_account)
     if not claimer:
         return
-    if task == 'claim':
-        proof = await claimer.get_proof(starknet_account.address)
-        if not proof:
-            logger.error(f'{starknet_account.acc_info} - нечего клеймить')
-            await starknet_account.close()
-            return
-        amount, index, merkle = int(proof['amount']), int(proof[ "merkle_index"]), proof["merkle_path"]
-        logger.debug(f'{starknet_account.acc_info} - начинаю клейм')
-        await claimer.claim(amount, index, merkle)
-    elif task == 'strk':
-        await claimer.transfer_strk()
-    else:
-        await claimer.transfer_eth()
+    match task:
+        case 'claim':
+            proof = await claimer.get_proof(starknet_account.address)
+            if not proof:
+                logger.error(f'{starknet_account.acc_info} - нечего клеймить')
+                await starknet_account.close()
+                return
+            amount, index, merkle = int(proof['amount']), int(proof[ "merkle_index"]), proof["merkle_path"]
+            logger.debug(f'{starknet_account.acc_info} - начинаю клейм')
+            await claimer.claim(amount, index, merkle)
+        case'strk':
+            await claimer.transfer_strk()
+        case _:
+            await claimer.transfer_eth()
 
     await starknet_account.close()

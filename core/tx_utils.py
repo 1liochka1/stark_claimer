@@ -19,7 +19,7 @@ async def check_status_tx(status, tx_url):
 async def tx_sender(calls, account: Account, info, tx_info):
     @tx_exceptor(info, hex(account.address))
     async def tx_sender_():
-        tx = await account.execute(calls=calls, auto_estimate=True)
+        tx = await account.execute_v1(calls=calls, auto_estimate=True)
         status = await account.client.wait_for_tx(tx.transaction_hash)
         tx_url = f'{scans["stark"]}{hex(tx.transaction_hash)}'
         if await check_status_tx(status.finality_status, tx_url):

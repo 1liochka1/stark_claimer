@@ -2,11 +2,12 @@ import asyncio
 import json
 
 from loguru import logger
+from starknet_py.contract import PreparedFunctionInvokeV1
 from starknet_py.net.account.account import Account
 
 from abi.abi import starknet_token_abi, claim_abi
 from core.other_utils import format_amount
-from core.utils import Starknet_account, get_contract, get_fee
+from core.utils import Starknet_account, get_contract
 from info.starknet_info import claim_address
 from info.tokens import starknet_tokens_addresses
 
@@ -50,8 +51,8 @@ class Claimer:
 
     async def claim(self, amount, index, proof):
         try:
-            contract = await get_contract(claim_address, claim_abi, self.account.client, 1)
-            calls = [contract.functions['claim'].prepare({"identity":self.account.address,
+            contract = await get_contract(claim_address, claim_abi, self.account, 1)
+            calls = [contract.functions['claim'].prepare_call({"identity":self.account.address,
                                                         "balance": format_amount(amount),
                                                         "index": index,
                                                         "merkle_path": [int(i, 16) for i in proof]})]
@@ -60,7 +61,7 @@ class Claimer:
             else:
                 logger.warning(f'{self.info} - не был указан адрес для отправки, делаю только клейм!...')
 
-            tx = await self.account.execute(calls, auto_estimate=True)
+            tx = await self.account.execute_v1(calls, auto_estimate=True)
             status = await self.account.client.wait_for_tx(tx.transaction_hash)
             tx_url = f'https://starkscan.co/tx/{hex(tx.transaction_hash)}'
             if check_status_tx(status.finality_status, tx_url):
@@ -71,9 +72,9 @@ class Claimer:
             await asyncio.sleep(1)
             return
 
-    async def create_transfer_call(self, token, amount):
-        contract = await get_contract(starknet_tokens_addresses[token], starknet_token_abi, self.account.client)
-        return contract.functions['transfer'].prepare(int(self.address_to, 16), amount)
+    async def create_transfer_call(self, token, amount) -> PreparedFunctionInvokeV1:
+        contract = await get_contract(starknet_tokens_addresses[token], starknet_token_abi, self.account)
+        return contract.functions['transfer'].prepare_invoke_v1(int(self.address_to, 16), amount, max_fee=None)
 
     async def transfer_eth(self):
         if not self.address_to:
@@ -84,14 +85,14 @@ class Claimer:
             if amount == 0:
                 logger.error(f'{self.info} - баланс ETH - 0!')
                 return
-            max_fee = await get_fee([await self.create_transfer_call('eth', amount)], self.account)
+            max_fee = (await (await self.create_transfer_call('eth', amount)).estimate_fee()).overall_fee
             if not max_fee:
                 return
-            tx = await self.account.execute([await self.create_transfer_call('eth', int(amount-max_fee))], max_fee=max_fee)
+            tx = await self.account.execute_v1([await self.create_transfer_call('eth', int(amount-max_fee))], max_fee=max_fee)
             status = await self.account.client.wait_for_tx(tx.transaction_hash)
             tx_url = f'https://starkscan.co/tx/{hex(tx.transaction_hash)}'
             if check_status_tx(status.finality_status, tx_url):
-                logger.success(f'{self.info} - успешно отправил {amount/10**18} ETH - {tx_url}')
+                logger.success(f'{self.info} - успешно отправил {amount/10**18} ETH\n{tx_url}')
                 return True
         except Exception as e:
             logger.error(f'{self.info} - {e}')
@@ -106,7 +107,7 @@ class Claimer:
             if amount == 0:
                 logger.error(f'{self.info} - баланс STRK - 0!')
                 return
-            tx = await self.account.execute([await self.create_transfer_call('stark', amount)], auto_estimate=True)
+            tx = await self.account.execute_v1([await self.create_transfer_call('stark', amount)], auto_estimate=True)
             status = await self.account.client.wait_for_tx(tx.transaction_hash)
             tx_url = f'https://starkscan.co/tx/{hex(tx.transaction_hash)}'
             if check_status_tx(status.finality_status, tx_url):
@@ -114,5 +115,3 @@ class Claimer:
                 return True
         except Exception as e:
             logger.error(e)
-
-
