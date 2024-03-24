@@ -5,6 +5,6 @@ bip39~=0.0.2
 hdwallet~=2.2.1
 questionary~=2.0.1
 aiohttp-socks==0.8.3
-starknet-py==0.18.3
+starknet-py==0.21.0a0
 loguru
 web3==6.15.1
